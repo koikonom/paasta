@@ -25,6 +25,7 @@ from paasta_tools.cli.utils import get_instance_config
 from paasta_tools.cli.utils import lazy_choices_completer
 from paasta_tools.cli.utils import list_instances
 from paasta_tools.cli.utils import list_services
+from paasta_tools.generate_deployments_for_service import get_deploy_groups
 
 
 def add_subparser(subparsers):
@@ -72,7 +73,7 @@ def format_tag(branch, force_bounce, desired_state):
     return 'refs/tags/paasta-%s-%s-%s' % (branch, force_bounce, desired_state)
 
 
-def make_mutate_refs_func(service_config, force_bounce, desired_state):
+def make_mutate_refs_func(branch, deploy_group, force_bounce, desired_state):
     """Create a function that will inform send_pack that we want to create tags
     corresponding to the set of branches passed, with the given force_bounce
     and desired_state parameters. These tags will point at the current tip of
@@ -83,8 +84,8 @@ def make_mutate_refs_func(service_config, force_bounce, desired_state):
     then diff what is returned versus what was passed in, and inform the remote
     git repo of our desires."""
     def mutate_refs(refs):
-        refs[format_tag(service_config.get_branch(), force_bounce, desired_state)] = \
-            refs['refs/heads/paasta-%s' % service_config.get_deploy_group()]
+        refs[format_tag(branch, force_bounce, desired_state)] = \
+            refs['refs/heads/paasta-%s' % deploy_group]
         return refs
     return mutate_refs
 
@@ -104,9 +105,10 @@ def log_event(service_config, desired_state):
     )
 
 
-def issue_state_change_for_service(service_config, force_bounce, desired_state):
+def issue_state_change_for_service(service_config, deploy_groups, force_bounce, desired_state):
     ref_mutator = make_mutate_refs_func(
-        service_config=service_config,
+        branch=service_config.get_branch(),
+        deploy_group=deploy_groups[service_config.get_branch()],
         force_bounce=force_bounce,
         desired_state=desired_state,
     )
@@ -132,17 +134,20 @@ def paasta_start_or_stop(args, desired_state):
         load_deployments=False,
     )
 
+    deploy_groups = get_deploy_groups(service=service, soa_dir=soa_dir)
+
     remote_refs = remote_git.list_remote_refs(utils.get_git_url(service))
 
-    if 'refs/heads/paasta-%s' % service_config.get_deploy_group() not in remote_refs:
+    if 'refs/heads/paasta-%s' % deploy_groups[service_config.get_branch()] not in remote_refs:
         print "No branches found for %s in %s." % \
-            (service_config.get_deploy_group(), remote_refs)
+            (deploy_groups[service_config.get_branch()], remote_refs)
         print "Has it been deployed there yet?"
         sys.exit(1)
 
     force_bounce = utils.format_timestamp(datetime.datetime.utcnow())
     issue_state_change_for_service(
         service_config=service_config,
+        deploy_groups=deploy_groups,
         force_bounce=force_bounce,
         desired_state=desired_state,
     )

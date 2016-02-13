@@ -38,6 +38,7 @@ from paasta_tools.marathon_tools import load_marathon_service_config
 from paasta_tools.monitoring_tools import get_team
 from paasta_tools.utils import _run
 from paasta_tools.utils import DEPLOY_PIPELINE_NON_DEPLOY_STEPS
+from paasta_tools.generate_deployments_for_service import get_deploy_groups
 from paasta_tools.utils import get_git_url
 from paasta_tools.utils import get_service_instance_list
 from paasta_tools.utils import list_clusters
@@ -211,6 +212,7 @@ def get_chronos_steps(service, soa_dir):
     deploy.yaml's steps look like. This is only so we can compare it 1-1
     with what deploy.yaml has for linting."""
     steps = []
+    deploy_groups = get_deploy_groups(service, soa_dir)
     for cluster in list_clusters(service, soa_dir):
         for _, instance in get_service_instance_list(
                 service=service,
@@ -225,7 +227,7 @@ def get_chronos_steps(service, soa_dir):
                 soa_dir=soa_dir,
                 load_deployments=False,
             )
-            steps.append(config.get_deploy_group())
+            steps.append(deploy_groups[config.get_branch()])
     return steps
 
 
@@ -235,10 +237,14 @@ def get_marathon_steps(service, soa_dir):
     deploy.yaml's steps look like. This is only so we can compare it 1-1
     with what deploy.yaml has for linting."""
     steps = []
+    deploy_groups = get_deploy_groups(service, soa_dir)
     for cluster in list_clusters(service, soa_dir):
-        for _, instance in get_service_instance_list(service=service, cluster=cluster,
-                                                     instance_type='marathon',
-                                                     soa_dir=soa_dir):
+        for _, instance in get_service_instance_list(
+                service=service,
+                cluster=cluster,
+                instance_type='marathon',
+                soa_dir=soa_dir
+        ):
             config = load_marathon_service_config(
                 service=service,
                 instance=instance,
@@ -246,7 +252,7 @@ def get_marathon_steps(service, soa_dir):
                 soa_dir=soa_dir,
                 load_deployments=False,
             )
-            steps.append(config.get_deploy_group())
+            steps.append(deploy_groups[config.get_branch()])
     return steps
 
 

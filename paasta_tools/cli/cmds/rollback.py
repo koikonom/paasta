@@ -23,6 +23,7 @@ from paasta_tools.cli.utils import list_services
 from paasta_tools.generate_deployments_for_service import get_instance_config_for_service
 from paasta_tools.utils import get_git_url
 from paasta_tools.utils import PaastaColors
+from paasta_tools.generate_deployments_for_service import get_deploy_groups
 
 
 def add_subparser(subparsers):
@@ -89,10 +90,7 @@ def paasta_rollback(args):
     commit = args.commit
     given_deploy_groups = [deploy_group for deploy_group in args.deploy_groups.split(",") if deploy_group]
 
-    service_deploy_groups = set(config.get_deploy_group() for config in get_instance_config_for_service(
-        soa_dir=DEFAULT_SOA_DIR,
-        service=service,
-    ))
+    service_deploy_groups = set(get_deploy_groups(service=service).values())
     deploy_groups, invalid = validate_given_deploy_groups(service_deploy_groups, given_deploy_groups)
     if len(invalid) > 0:
         print PaastaColors.yellow("These deploy groups are not valid and will be skipped: %s.\n" % (",").join(invalid))

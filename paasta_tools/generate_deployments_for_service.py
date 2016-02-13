@@ -49,6 +49,7 @@ from paasta_tools import remote_git
 from paasta_tools.chronos_tools import load_chronos_job_config
 from paasta_tools.marathon_tools import load_marathon_service_config
 from paasta_tools.utils import atomic_file_write
+from paasta_tools.utils import DEFAULT_SOA_DIR
 from paasta_tools.utils import get_git_url
 from paasta_tools.utils import get_service_instance_list
 from paasta_tools.utils import list_clusters
@@ -69,6 +70,17 @@ def parse_args():
                         help="Service name to make the deployments.json for")
     args = parser.parse_args()
     return args
+
+
+def get_deploy_groups(service, soa_dir=DEFAULT_SOA_DIR):
+    # temporary backwards compatibility
+    deploy_groups = {config.get_branch(): config.config_dict.get('deploy_group', config.get_branch())
+                     for config in get_instance_config_for_service(service=service, soa_dir=soa_dir)}
+    deploy_groups.update(service_configuration_lib.read_service_configuration(
+        service,
+        soa_dir,
+    )['deploy'].get('deploy_groups', {}))
+    return deploy_groups
 
 
 def get_instance_config_for_service(soa_dir, service):
@@ -122,12 +134,12 @@ def get_deploy_group_mappings(soa_dir, service, old_mappings):
     """
     mappings = {}
 
-    service_configs = get_instance_config_for_service(
+    service_configs = tuple(get_instance_config_for_service(
         soa_dir=soa_dir,
         service=service,
-    )
+    ))
 
-    deploy_group_branch_mappings = dict((config.get_branch(), config.get_deploy_group()) for config in service_configs)
+    deploy_group_branch_mappings = get_deploy_groups(service, service_configs, soa_dir)
     if not deploy_group_branch_mappings:
         log.info('Service %s has no valid deploy groups. Skipping.', service)
         return {}
