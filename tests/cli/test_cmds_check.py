@@ -520,6 +520,7 @@ def test_deploy_has_performance_check_true(mock_pipeline_config, mock_stdout):
     assert actual is True
 
 
+@patch('paasta_tools.cli.cmds.check.get_deploy_groups', autospec=True)
 @patch('paasta_tools.cli.cmds.check.load_marathon_service_config')
 @patch('paasta_tools.cli.cmds.check.list_clusters')
 @patch('paasta_tools.cli.cmds.check.get_service_instance_list')
@@ -527,6 +528,7 @@ def test_get_marathon_steps(
     mock_get_service_instance_list,
     mock_list_clusters,
     mock_load_marathon_service_config,
+    mock_get_deploy_groups,
 ):
     mock_list_clusters.return_value = ['cluster1']
     mock_get_service_instance_list.return_value = [('unused', 'instance1'), ('unused', 'instance2')]
@@ -538,6 +540,10 @@ def test_get_marathon_steps(
             config_dict={},
             branch_dict={},
         )
+    mock_get_deploy_groups.return_value = {
+        'cluster1.instance1': 'cluster1.instance1',
+        'cluster1.instance2': 'cluster1.instance2',
+    }
     expected = ['cluster1.instance1', 'cluster1.instance2']
     actual = get_marathon_steps(service='unused', soa_dir='/fake/path')
     assert actual == expected

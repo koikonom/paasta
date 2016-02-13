@@ -134,12 +134,7 @@ def get_deploy_group_mappings(soa_dir, service, old_mappings):
     """
     mappings = {}
 
-    service_configs = tuple(get_instance_config_for_service(
-        soa_dir=soa_dir,
-        service=service,
-    ))
-
-    deploy_group_branch_mappings = get_deploy_groups(service, service_configs, soa_dir)
+    deploy_group_branch_mappings = get_deploy_groups(service, soa_dir)
     if not deploy_group_branch_mappings:
         log.info('Service %s has no valid deploy groups. Skipping.', service)
         return {}

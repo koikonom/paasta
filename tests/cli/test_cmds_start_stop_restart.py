@@ -42,15 +42,16 @@ def test_issue_state_change_for_service(mock_log_event, get_transport_and_path, 
     get_transport_and_path.return_value = (mock_git_client, fake_path)
 
     start_stop_restart.issue_state_change_for_service(
-        MarathonServiceConfig(
+        service_config=MarathonServiceConfig(
             cluster='fake_cluster',
             instance='fake_instance',
             service='fake_service',
             config_dict={},
             branch_dict={},
         ),
-        '0',
-        'stop'
+        deploy_groups={'fake_cluster.fake_instance': 'fake_cluster.fake_instance'},
+        force_bounce='0',
+        desired_state='stop',
     )
 
     get_transport_and_path.assert_called_once_with(fake_git_url)
@@ -62,13 +63,8 @@ def test_issue_state_change_for_service(mock_log_event, get_transport_and_path, 
 def test_make_mutate_refs_func():
 
     mutate_refs = start_stop_restart.make_mutate_refs_func(
-        service_config=MarathonServiceConfig(
-            cluster='fake_cluster',
-            instance='fake_instance',
-            service='fake_service',
-            config_dict={'deploy_group': 'a'},
-            branch_dict={},
-        ),
+        branch='fake_cluster.fake_instance',
+        deploy_group='a',
         force_bounce='FORCEBOUNCE',
         desired_state='stop',
     )

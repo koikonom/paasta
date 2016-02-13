@@ -22,7 +22,8 @@ from paasta_tools.cli.cmds.rollback import validate_given_deploy_groups
 from paasta_tools.marathon_tools import MarathonServiceConfig
 
 
-@patch('paasta_tools.cli.cmds.rollback.get_instance_config_for_service', autospec=True)
+@patch('paasta_tools.cli.cmds.rollback.get_deploy_groups', autospec=True)
+@patch('paasta_tools.generate_deployments_for_service.get_instance_config_for_service', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.figure_out_service_name', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.get_git_url', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.mark_for_deployment', autospec=True)
@@ -31,10 +32,11 @@ def test_paasta_rollback_mark_for_deployment_simple_invocation(
     mock_get_git_url,
     mock_figure_out_service_name,
     mock_get_instance_config,
+    mock_get_deploy_groups,
 ):
 
     fake_args = Mock(
-        deploy_groups='fake_deploy_groups',
+        deploy_groups='fake_deploy_group',
         commit='123456'
     )
 
@@ -42,12 +44,16 @@ def test_paasta_rollback_mark_for_deployment_simple_invocation(
     mock_figure_out_service_name.return_value = 'fakeservice'
 
     mock_get_instance_config.return_value = [MarathonServiceConfig(
-        service='',
-        cluster='',
-        instance='',
+        service='fake_service',
+        cluster='fake_cluster',
+        instance='fake_instance',
         branch_dict={},
-        config_dict={'deploy_group': 'fake_deploy_groups'},
+        config_dict={'deploy_group': 'fake_deploy_group'},
     )]
+
+    mock_get_deploy_groups.return_value = {
+        'fake_cluster.fake_instance': 'fake_deploy_group',
+    }
 
     with raises(SystemExit) as sys_exit:
         paasta_rollback(fake_args)
@@ -63,7 +69,8 @@ def test_paasta_rollback_mark_for_deployment_simple_invocation(
     assert mock_mark_for_deployment.call_count == 1
 
 
-@patch('paasta_tools.cli.cmds.rollback.get_instance_config_for_service', autospec=True)
+@patch('paasta_tools.cli.cmds.rollback.get_deploy_groups', autospec=True)
+@patch('paasta_tools.generate_deployments_for_service.get_instance_config_for_service', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.figure_out_service_name', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.get_git_url', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.mark_for_deployment', autospec=True)
@@ -72,6 +79,7 @@ def test_paasta_rollback_mark_for_deployment_no_deploy_group_arg(
     mock_get_git_url,
     mock_figure_out_service_name,
     mock_get_instance_config,
+    mock_get_deploy_groups,
 ):
 
     fake_args = Mock(
@@ -85,8 +93,8 @@ def test_paasta_rollback_mark_for_deployment_no_deploy_group_arg(
     mock_get_instance_config.return_value = [
         MarathonServiceConfig(
             service=mock_figure_out_service_name.return_value,
-            cluster='',
-            instance='',
+            cluster='c',
+            instance='i',
             config_dict={'deploy_group': 'fake_deploy_group'},
             branch_dict={},
         ),
@@ -98,6 +106,11 @@ def test_paasta_rollback_mark_for_deployment_no_deploy_group_arg(
             branch_dict={},
         ),
     ]
+
+    mock_get_deploy_groups.return_value = {
+        'fake_cluster.fake_instance': 'fake_cluster.fake_instance',
+        'c.i': 'fake_deploy_group',
+    }
 
     with raises(SystemExit) as sys_exit:
         paasta_rollback(fake_args)
@@ -123,7 +136,7 @@ def test_paasta_rollback_mark_for_deployment_no_deploy_group_arg(
     assert mock_mark_for_deployment.call_count == 2
 
 
-@patch('paasta_tools.cli.cmds.rollback.get_instance_config_for_service', autospec=True)
+@patch('paasta_tools.generate_deployments_for_service.get_instance_config_for_service', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.figure_out_service_name', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.get_git_url', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.mark_for_deployment', autospec=True)
@@ -159,7 +172,8 @@ def test_paasta_rollback_mark_for_deployment_wrong_deploy_group_args(
     assert mock_mark_for_deployment.call_count == 0
 
 
-@patch('paasta_tools.cli.cmds.rollback.get_instance_config_for_service', autospec=True)
+@patch('paasta_tools.cli.cmds.rollback.get_deploy_groups', autospec=True)
+@patch('paasta_tools.generate_deployments_for_service.get_instance_config_for_service', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.figure_out_service_name', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.get_git_url', autospec=True)
 @patch('paasta_tools.cli.cmds.rollback.mark_for_deployment', autospec=True)
@@ -168,6 +182,7 @@ def test_paasta_rollback_mark_for_deployment_multiple_instance_args(
     mock_get_git_url,
     mock_figure_out_service_name,
     mock_get_instance_config_for_service,
+    mock_get_deploy_groups,
 ):
 
     fake_args = Mock(
@@ -194,6 +209,11 @@ def test_paasta_rollback_mark_for_deployment_multiple_instance_args(
             branch_dict={},
         ),
     ]
+
+    mock_get_deploy_groups.return_value = {
+        'cluster.instance1': 'cluster.instance1',
+        'cluster.instance2': 'cluster.instance2',
+    }
 
     with raises(SystemExit) as sys_exit:
         paasta_rollback(fake_args)

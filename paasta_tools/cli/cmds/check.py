@@ -33,12 +33,12 @@ from paasta_tools.cli.utils import PaastaCheckMessages
 from paasta_tools.cli.utils import success
 from paasta_tools.cli.utils import validate_service_name
 from paasta_tools.cli.utils import x_mark
+from paasta_tools.generate_deployments_for_service import get_deploy_groups
 from paasta_tools.marathon_tools import get_all_namespaces_for_service
 from paasta_tools.marathon_tools import load_marathon_service_config
 from paasta_tools.monitoring_tools import get_team
 from paasta_tools.utils import _run
 from paasta_tools.utils import DEPLOY_PIPELINE_NON_DEPLOY_STEPS
-from paasta_tools.generate_deployments_for_service import get_deploy_groups
 from paasta_tools.utils import get_git_url
 from paasta_tools.utils import get_service_instance_list
 from paasta_tools.utils import list_clusters

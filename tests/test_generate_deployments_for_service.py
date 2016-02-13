@@ -49,6 +49,14 @@ def test_get_deploy_group_mappings():
     }
 
     fake_old_mappings = ['']
+    fake_service_configuration = {
+        'deploy': {
+            'deploy_groups': {
+                'clusterA.main': 'no_thanks',
+                'clusterB.main': 'try_me',
+            }
+        }
+    }
     expected = {
         'fake_service:paasta-clusterA.main': {
             'docker_image': 'services-fake_service:paasta-789009',
@@ -62,13 +70,15 @@ def test_get_deploy_group_mappings():
         },
     }
     with contextlib.nested(
+        mock.patch('paasta_tools.remote_git.list_remote_refs', return_value=fake_remote_refs),
+        mock.patch('paasta_tools.generate_deployments_for_service.service_configuration_lib.read_service_configuration',
+                   return_value=fake_service_configuration),
         mock.patch('paasta_tools.generate_deployments_for_service.get_instance_config_for_service',
                    return_value=fake_service_configs),
-        mock.patch('paasta_tools.remote_git.list_remote_refs',
-                   return_value=fake_remote_refs),
     ) as (
-        get_instance_config_for_service_patch,
         list_remote_refs_patch,
+        mock_get_deploy_groups,
+        get_instance_config_for_service_patch,
     ):
         actual = generate_deployments_for_service.get_deploy_group_mappings(fake_soa_dir,
                                                                             fake_service, fake_old_mappings)

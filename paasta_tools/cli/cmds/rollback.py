@@ -14,16 +14,13 @@
 # limitations under the License.
 import sys
 
-from service_configuration_lib import DEFAULT_SOA_DIR
-
 from paasta_tools.cli.cmds.mark_for_deployment import mark_for_deployment
 from paasta_tools.cli.utils import figure_out_service_name
 from paasta_tools.cli.utils import lazy_choices_completer
 from paasta_tools.cli.utils import list_services
-from paasta_tools.generate_deployments_for_service import get_instance_config_for_service
+from paasta_tools.generate_deployments_for_service import get_deploy_groups
 from paasta_tools.utils import get_git_url
 from paasta_tools.utils import PaastaColors
-from paasta_tools.generate_deployments_for_service import get_deploy_groups
 
 
 def add_subparser(subparsers):
